@@ -3,7 +3,7 @@ var requirejs = require('requirejs');
 requirejs.config({
     baseUrl: __dirname,
     paths: {
-		lib: '../lib'
+		lib: '../../lib'
 	},
     nodeRequire: require
 });
@@ -21,8 +21,8 @@ module.exports = {
 
 		var openSCADText = Globals.preParse(text);
 
-		var openJSCADResult = parser.parse(openSCADText);
+		var coffeeSCADResult = parser.parse(openSCADText);
 
-		return openJSCADResult.lines.join('\n');
+		return coffeeSCADResult.lines.join('\n');
 	}
 };

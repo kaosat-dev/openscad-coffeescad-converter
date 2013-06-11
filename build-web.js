@@ -1,12 +1,12 @@
 {
-    "baseUrl": "src",
+    "baseUrl": "src/openjscad",
     "paths": {
-        "openscadOpenJscadParser": "../web",
-        "lib": "../lib"
+        "openscadOpenJscadParser": "../../web-openjscad",
+        "lib": "../../lib"
     },
-    "include": ["../tools/almond", "openscadOpenJscadParser"],
-    "exclude": ["../lib/underscore"],
-    "out": "dist/web-built.js",
+    "include": ["../../tools/almond", "openscadOpenJscadParser"],
+    "exclude": ["../../lib/underscore"],
+    "out": "dist/web-built-openjscad.js",
     "wrap": {
         "startFile": "tools/start.frag",
         "endFile": "tools/end.frag"

@@ -16,17 +16,18 @@ define("TransformModules", ["Globals", "Context"], function(Globals, Context){
 		        });
 		        var childAdaptor = factory.getAdaptor(childInst);
 		        var transformedChild = childAdaptor.evaluate(context, childInst);
-		        transformedChild += cb();
-		        
-		        childModules.push(transformedChild);
+                if (transformedChild){
+                    transformedChild += cb();
+                    childModules.push(transformedChild);
+                }
 		    };
 
 		    if (childModules.length == 1){
 		        return childModules[0];
-		    } else {
+		    } else if (childModules.length > 1) {
 		        return _.first(childModules)+".union([" + _.rest(childModules) + "])";
 		    }
-		    
+
 		}
     };
 
@@ -76,9 +77,9 @@ define("TransformModules", ["Globals", "Context"], function(Globals, Context){
         });
 
         var context = Context.newContext(parentContext, ["v"], [], inst);
-        
+
         var v = Context.contextVariableLookup(context, "v", [0,0,0]);
-        
+
         if (!(v instanceof Array)){
             var val = v;
             v = [val,val,val];
@@ -127,7 +128,7 @@ define("TransformModules", ["Globals", "Context"], function(Globals, Context){
     };
 
     ScaleTransform.prototype.evaluate = function(parentContext, inst){
-        
+
         inst.argvalues = [];
 
         _.each(inst.argexpr, function(expr,index,list) {
@@ -137,6 +138,11 @@ define("TransformModules", ["Globals", "Context"], function(Globals, Context){
         var context = Context.newContext(parentContext, ["v"], [], inst);
 
         var v = Context.contextVariableLookup(context, "v", [0,0,0]);
+
+        if (!(v instanceof Array)){
+            var val = v;
+            v = [val,val,val];
+        }
 
         return this.transformChildren(inst.children, context, function(){
             return _.template('.scale([<%=v%>])', {v:v});

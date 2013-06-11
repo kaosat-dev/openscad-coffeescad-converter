@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+</head>
+
+
+<body>
+
+<script type="text/javascript" src="./lib/underscore.js"></script>
+<script type="text/javascript" src="./lib/jquery.js"></script>
+<script src="./dist/web-built-coffeescad.js"></script>
+
+<script type="text/javascript">
+$(function(){
+  console.log(openscadCoffeeScadParser.parse($('#txt').text()));
+})
+
+
+</script>
+
+
+	Put some code in there, skipper
+	<textarea id="txt" style="width:400px; height:400px">
+//cube([5, 10, 3]);
+//sphere(r=7,$fn=30);
+//some comment
+
+var1 = 25;
+var2 = 35;
+
+ module mount()
+{
+	difference() {
+        cylinder (h = 4, r=1, center = true, $fn=100);
+        rotate ([90,0,0]) cylinder (h = 4, r=0.9, center = true, $fn=100);
+	}
+}
+mount();
+	</textarea>
+	<textarea id="result" style="width:400px; height:400px">
+	</textarea>
+	<button onClick="$('#result').val(openscadCoffeeScadParser.parse($('#txt').val()));">
+		Clicky
+	</button>
+
+
+</body>
+</html>
+
