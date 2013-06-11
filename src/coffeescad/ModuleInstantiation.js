@@ -11,7 +11,7 @@ define("ModuleInstantiation", ["Globals", "CoffeescadSolidFactorySingleton"], fu
     };
 
     ModuleInstantiation.prototype.evaluate = function(context) {
-
+        console.log("instanciating module", context);
         var evaluatedModule;
 
         // NOTE: not sure how we should handle this in javascript ... is it necessary?

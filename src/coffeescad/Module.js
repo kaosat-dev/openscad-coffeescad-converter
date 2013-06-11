@@ -11,7 +11,7 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
     };
 
     Module.prototype.evaluate = function(parentContext, inst) {
-	console.log("evalueating module",inst);
+	console.log("evalueating module",parentContext, inst);
         var lines = [];
 
         var context = new Context(parentContext);

@@ -10,5 +10,6 @@
     "wrap": {
         "startFile": "tools/start-coffee.frag",
         "endFile": "tools/end-coffee.frag"
-    }
+    },
+    "optimize":"none"
 }

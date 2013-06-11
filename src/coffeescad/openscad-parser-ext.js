@@ -27,6 +27,17 @@ define(["Module", "Context", "Globals", "FunctionDef", "openscad-parser-support"
             context.setVariable("importCache", yy.importCache);
         }
 
+        var variables = []
+        for (var vName in currmodule.assignments_var)
+        {
+            if(currmodule.assignments_var.hasOwnProperty(vName))
+            {
+                var varData = vName + " = " + currmodule.assignments_var[vName].const_value;
+                variables.push( varData );
+                lines.push( varData );
+            }
+        }
+        
         var res = currmodule.evaluate(context);
 
         var evaluatedLines = _.flatten(res);

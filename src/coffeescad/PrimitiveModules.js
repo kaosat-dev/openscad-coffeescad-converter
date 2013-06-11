@@ -92,18 +92,31 @@ define("PrimitiveModules", ["Globals", "Context"], function(Globals, Context){
         var size = Context.contextVariableLookup(context, "size", 1);
         
         if (size instanceof Array){
-            coffeescadArgs.radius = [size[0]/2, size[1]/2, size[2]/2];
+            coffeescadArgs.size = [size[0], size[1], size[2]];
         } else {
-            coffeescadArgs.radius = [size/2,size/2,size/2];
+            coffeescadArgs.radius = [size,size,size];
         }
 
         if (isCentered){
             coffeescadArgs.centerVector = [0,0,0];
         } else {
-            coffeescadArgs.centerVector = [coffeescadArgs.radius[0],coffeescadArgs.radius[1],coffeescadArgs.radius[2]];
+            var sizeElems = []
+            
+            for (var i=0; i<size.length; i++)
+            {
+                if(typeof size[i] == 'string' || size[i] instanceof String) 
+                {
+                    console.log("by jove, a string");
+                }
+                console.log("bla",typeof(size[i]));
+                var elem = (typeof size[i] == 'string' || size[i] instanceof String)? size[i]+"/2" : size[i]/2;
+                sizeElems.push( elem );
+            }
+            
+            coffeescadArgs.centerVector = [sizeElems[0],sizeElems[1],sizeElems[2]];
         }
 
-        return _.template('new Cube({center: [<%=String(centerVector)%>],size: [<%= radius %>], $fn: <%= resolution%>})', coffeescadArgs);
+        return _.template('new Cube({center: [<%=String(centerVector)%>],size: [<%= size %>], $fn: <%= resolution%>})', coffeescadArgs);
     };
 
 

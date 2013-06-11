@@ -347,7 +347,9 @@ define("Expression", ["Range", "lib/sylvester"], function(Range, Sylvester){
                 return vec;
                 break;
             case "L":
-                return context.lookupVariable(this.var_name);
+                //TODO: move this to context ?
+                return this.var_name // context.vars[this.var_name]
+                //return context.lookupVariable(this.var_name);
                 break;
             case "[]":
                 return this.children[0].evaluate(context)[this.children[1].evaluate(context)];
