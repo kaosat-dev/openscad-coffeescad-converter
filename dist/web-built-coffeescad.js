@@ -1090,6 +1090,12 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
         _.each(this.assignments_var, function(value, key, list) {
             context.setVariable(key, value.evaluate(context));
         });
+        
+        //FIXME
+        _.each(context.modules_p, function(child, index, list) {
+            child.evaluate(context);
+        });
+        
 
         var controlChildren = _.filter(this.children, function(child){ 
             return child && child.name == "echo"; 

@@ -24,17 +24,25 @@ $(function(){
 //sphere(r=7,$fn=30);
 //some comment
 
-
-
-var1 = 25;
+//Test1
+var1 = 12;
 var2 = 35;
 cube([var2, 10, 3]);
 
+//Test2
+module mount()
+{
+  var1 = 12;
+  var2 = 35;
+  cube([var2, 10, 3]);
+}
+
+//Test3
  module mount()
 {
 	difference() {
         cylinder (h = 4, r=1, center = true, $fn=100);
-        rotate ([90,0,0]) cylinder (h = 4, r=0.9, center = true, $fn=100);
+        rotate ([90,0,0]) cylinder (h = var1, r=0.9, center = true, $fn=100);
 	}
 }
 //mount();
