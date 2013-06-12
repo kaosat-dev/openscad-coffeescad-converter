@@ -19,7 +19,7 @@ define("PrimitiveModules", ["Globals", "Context"], function(Globals, Context){
         var resolution = Context.get_fragments_from_r(r, context);
 
         var coffeescadParameters = {center:[0,0,0], resolution:resolution, radius:r};
-                   
+        
         return _.template('new Sphere({center: [<%=String(center)%>], r: <%= radius %>, $fn: <%= resolution%>})', coffeescadParameters);
     }
 
@@ -67,12 +67,12 @@ define("PrimitiveModules", ["Globals", "Context"], function(Globals, Context){
         if (_.has(context.vars, 'r2')) {
             coffeescadArgs.radiusEnd = r2;
         }
-        coffeescadArgs.resolution = Context.get_fragments_from_r(Math.max(coffeescadArgs.radiusStart, coffeescadArgs.radiusEnd), context);
-
+        coffeescadArgs.resolution = Context.contextVariableLookup(context, "$fn", 16);
+        
         if (coffeescadArgs.radiusStart == 0 && coffeescadArgs.radiusEnd == 0){
             return undefined;
         }
-        coffeescadArgs.height = endZ - startZ;
+        coffeescadArgs.height = h;
 	coffeescadArgs.center = isCentered? [0,0,0] : [0,0, -coffeescadArgs.height/2];
 	
 	return _.template('new Cylinder({h: <%=height%>,r1: <%=radiusStart%>, r2: <%=radiusEnd%>, center: [<%=center%>], $fn: <%=resolution%>})', coffeescadArgs);

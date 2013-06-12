@@ -5,7 +5,7 @@ define("ChildModule", ["Globals", "Context"], function(Globals, Context){
     };
 
     Child.prototype.evaluate = function(parentContext, inst){
-        
+        console.log("evaluating child module")
         inst.argvalues = [];
         _.each(inst.argexpr, function(expr,index,list) {
             inst.argvalues.push(expr.evaluate(parentContext));

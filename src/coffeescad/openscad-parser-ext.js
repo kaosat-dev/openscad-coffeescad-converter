@@ -14,7 +14,7 @@ define(["Module", "Context", "Globals", "FunctionDef", "openscad-parser-support"
         var lines = [];
         //lines.push("function main(){");
         //lines.push("\n");
-	lines.push("result = (");	
+	//lines.push("result = (");	
 
         var context = undefined;
         if (yy.context !== undefined){
@@ -38,19 +38,30 @@ define(["Module", "Context", "Globals", "FunctionDef", "openscad-parser-support"
             }
         }
         
+        for (var i=0; i< currmodule.modules.length; i++)
+        {
+        	bla = currmodule.modules[i];
+        	var fakeYY = {}
+        	//processModule(bla);
+        }
         var res = currmodule.evaluate(context);
 
         var evaluatedLines = _.flatten(res);
         if (evaluatedLines.length == 1){
             lines.push(evaluatedLines[0]);
         } else if (evaluatedLines.length > 1){
-            lines.push(_.first(evaluatedLines)+".union([");
-            lines.push(_.rest(evaluatedLines));
-            lines.push("])");
+            //lines.push(_.first(evaluatedLines)+".union([");
+        	//lines.push(_.first(evaluatedLines));
+        	for (var i=0; i< evaluatedLines.length; i++)
+            {
+        		lines.push(evaluatedLines[i]);
+            }
+            //lines.push(_.rest(evaluatedLines,0));
+            //lines.push("])");
         }
         //lines.push("};");
-	lines.push(")\n");
-	lines.push("assembly.add(result)")
+	//lines.push(")\n");
+	//lines.push("assembly.add(result)")
 
         var x = {lines:lines, context:Globals.context_stack[Globals.context_stack.length-1]};
         resetModule();

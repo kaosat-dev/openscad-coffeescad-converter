@@ -35,9 +35,30 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
         });
         
         //FIXME
+        var specialModule = false;
+        if (this.name !== "root")
+        {
+        	specialModule = true;
+            ln1 = "class " + this.name + " extends Part"
+            ln2 = "  constructor:()->"
+            ln3 = "    super()"
+            lines.push(ln1)
+            lines.push(ln2)
+            lines.push(ln3)
+            
+            _.each(this.assignments_var, function(value, key, list) {
+            	lines.push("    "+ key + " = "+ value.evaluate(context));
+            });
+            
+        }
+        
+        var someResult = []
         _.each(context.modules_p, function(child, index, list) {
-            child.evaluate(context);
+            var tmpRes = child.evaluate(context);
+            lines.push(tmpRes);
         });
+        
+       
         
 
         var controlChildren = _.filter(this.children, function(child){ 
@@ -55,6 +76,10 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
         var evaluatedLines = [];
         _.each(nonControlChildren, function(child, index, list) {
             var evaluatedChild = child.evaluate(context)
+            if (specialModule)
+            {
+            	evaluatedChild = "    @union("+evaluatedChild+")"
+            }
             if (evaluatedChild == undefined || (_.isArray(evaluatedChild) && _.isEmpty(evaluatedChild))){
                 // ignore
             } else {
@@ -66,9 +91,21 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
         if (cleanedLines.length == 1){
             lines.push(cleanedLines[0]);
         } else if (cleanedLines.length > 1){
-            lines.push(_.first(cleanedLines)+".union([" +_.rest(cleanedLines)+"])");
+        	if (!specialModule)
+        	{
+        		lines.push(_.first(cleanedLines)+".union([" +_.rest(cleanedLines)+"])");
+        	}
+        	else
+        	{
+        		_.each(cleanedLines, function(value, key, list) {
+                	lines.push(value);
+                });
+        		
+        	}
+            
         }
         
+        lines.push("")
         return lines;
     };
 

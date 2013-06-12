@@ -1092,9 +1092,30 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
         });
         
         //FIXME
+        var specialModule = false;
+        if (this.name !== "root")
+        {
+        	specialModule = true;
+            ln1 = "class " + this.name + " extends Part"
+            ln2 = "  constructor:()->"
+            ln3 = "    super()"
+            lines.push(ln1)
+            lines.push(ln2)
+            lines.push(ln3)
+            
+            _.each(this.assignments_var, function(value, key, list) {
+            	lines.push("    "+ key + " = "+ value.evaluate(context));
+            });
+            
+        }
+        
+        var someResult = []
         _.each(context.modules_p, function(child, index, list) {
-            child.evaluate(context);
+            var tmpRes = child.evaluate(context);
+            lines.push(tmpRes);
         });
+        
+       
         
 
         var controlChildren = _.filter(this.children, function(child){ 
@@ -1112,6 +1133,10 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
         var evaluatedLines = [];
         _.each(nonControlChildren, function(child, index, list) {
             var evaluatedChild = child.evaluate(context)
+            if (specialModule)
+            {
+            	evaluatedChild = "    @union("+evaluatedChild+")"
+            }
             if (evaluatedChild == undefined || (_.isArray(evaluatedChild) && _.isEmpty(evaluatedChild))){
                 // ignore
             } else {
@@ -1123,9 +1148,21 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
         if (cleanedLines.length == 1){
             lines.push(cleanedLines[0]);
         } else if (cleanedLines.length > 1){
-            lines.push(_.first(cleanedLines)+".union([" +_.rest(cleanedLines)+"])");
+        	if (!specialModule)
+        	{
+        		lines.push(_.first(cleanedLines)+".union([" +_.rest(cleanedLines)+"])");
+        	}
+        	else
+        	{
+        		_.each(cleanedLines, function(value, key, list) {
+                	lines.push(value);
+                });
+        		
+        	}
+            
         }
         
+        lines.push("")
         return lines;
     };
 
@@ -1169,7 +1206,7 @@ define('openscad-parser-ext',["Module", "Context", "Globals", "FunctionDef", "op
         var lines = [];
         //lines.push("function main(){");
         //lines.push("\n");
-	lines.push("result = (");	
+	//lines.push("result = (");	
 
         var context = undefined;
         if (yy.context !== undefined){
@@ -1193,19 +1230,30 @@ define('openscad-parser-ext',["Module", "Context", "Globals", "FunctionDef", "op
             }
         }
         
+        for (var i=0; i< currmodule.modules.length; i++)
+        {
+        	bla = currmodule.modules[i];
+        	var fakeYY = {}
+        	//processModule(bla);
+        }
         var res = currmodule.evaluate(context);
 
         var evaluatedLines = _.flatten(res);
         if (evaluatedLines.length == 1){
             lines.push(evaluatedLines[0]);
         } else if (evaluatedLines.length > 1){
-            lines.push(_.first(evaluatedLines)+".union([");
-            lines.push(_.rest(evaluatedLines));
-            lines.push("])");
+            //lines.push(_.first(evaluatedLines)+".union([");
+        	//lines.push(_.first(evaluatedLines));
+        	for (var i=0; i< evaluatedLines.length; i++)
+            {
+        		lines.push(evaluatedLines[i]);
+            }
+            //lines.push(_.rest(evaluatedLines,0));
+            //lines.push("])");
         }
         //lines.push("};");
-	lines.push(")\n");
-	lines.push("assembly.add(result)")
+	//lines.push(")\n");
+	//lines.push("assembly.add(result)")
 
         var x = {lines:lines, context:Globals.context_stack[Globals.context_stack.length-1]};
         resetModule();
@@ -2623,6 +2671,7 @@ define("Expression", ["Range", "lib/sylvester"], function(Range, Sylvester){
                 if (_.isUndefined(c1) || _.isUndefined(c2) || _.isNaN(c1) || _.isNaN(c2)){
                     return undefined 
                 }
+                return c1 + "*" + c2;
 
                 if (_.isArray(c1) || _.isArray(c2)){
 
@@ -2657,6 +2706,8 @@ define("Expression", ["Range", "lib/sylvester"], function(Range, Sylvester){
                 if (_.isUndefined(c1) || _.isUndefined(c2) || _.isNaN(c1) || _.isNaN(c2)){
                     return undefined 
                 }
+                
+                return c1 + "/" + c2;
 
                 if (_.isArray(c1) || _.isArray(c2)){
 
@@ -2713,10 +2764,11 @@ define("Expression", ["Range", "lib/sylvester"], function(Range, Sylvester){
             case "+":
                 var c1 = this.children[0].evaluate(context);
                 var c2 = this.children[1].evaluate(context);
-
+                
                 if (_.isUndefined(c1) || _.isUndefined(c2) || _.isNaN(c1) || _.isNaN(c2)){
                     return undefined 
                 }
+                return c1 + "+" + c2;
 
                 if (_.isArray(c1) && _.isArray(c2)){
                     //matrices
@@ -2937,7 +2989,7 @@ define("PrimitiveModules", ["Globals", "Context"], function(Globals, Context){
         var resolution = Context.get_fragments_from_r(r, context);
 
         var coffeescadParameters = {center:[0,0,0], resolution:resolution, radius:r};
-                   
+        
         return _.template('new Sphere({center: [<%=String(center)%>], r: <%= radius %>, $fn: <%= resolution%>})', coffeescadParameters);
     }
 
@@ -2985,12 +3037,12 @@ define("PrimitiveModules", ["Globals", "Context"], function(Globals, Context){
         if (_.has(context.vars, 'r2')) {
             coffeescadArgs.radiusEnd = r2;
         }
-        coffeescadArgs.resolution = Context.get_fragments_from_r(Math.max(coffeescadArgs.radiusStart, coffeescadArgs.radiusEnd), context);
-
+        coffeescadArgs.resolution = Context.contextVariableLookup(context, "$fn", 16);
+        
         if (coffeescadArgs.radiusStart == 0 && coffeescadArgs.radiusEnd == 0){
             return undefined;
         }
-        coffeescadArgs.height = endZ - startZ;
+        coffeescadArgs.height = h;
 	coffeescadArgs.center = isCentered? [0,0,0] : [0,0, -coffeescadArgs.height/2];
 	
 	return _.template('new Cylinder({h: <%=height%>,r1: <%=radiusStart%>, r2: <%=radiusEnd%>, center: [<%=center%>], $fn: <%=resolution%>})', coffeescadArgs);
@@ -3627,7 +3679,7 @@ define("ChildModule", ["Globals", "Context"], function(Globals, Context){
     };
 
     Child.prototype.evaluate = function(parentContext, inst){
-        
+        console.log("evaluating child module")
         inst.argvalues = [];
         _.each(inst.argexpr, function(expr,index,list) {
             inst.argvalues.push(expr.evaluate(parentContext));

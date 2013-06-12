@@ -10,15 +10,6 @@
 <script type="text/javascript" src="./lib/jquery.js"></script>
 <script src="./dist/web-built-coffeescad.js"></script>
 
-<script type="text/javascript">
-$(function(){
-  console.log(openscadCoffeeScadParser.parse($('#txt').text()));
-})
-
-
-</script>
-
-
 	Put some code in there, skipper
 	<textarea id="txt" style="width:400px; height:400px">
 //sphere(r=7,$fn=30);
@@ -35,6 +26,7 @@ module mount()
   var1 = 12;
   var2 = 35;
   cube([var2, 10, 3]);
+  sphere(r=5, $fn=15);
 }
 
 //Test3

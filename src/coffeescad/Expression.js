@@ -76,6 +76,7 @@ define("Expression", ["Range", "lib/sylvester"], function(Range, Sylvester){
                 if (_.isUndefined(c1) || _.isUndefined(c2) || _.isNaN(c1) || _.isNaN(c2)){
                     return undefined 
                 }
+                return c1 + "*" + c2;
 
                 if (_.isArray(c1) || _.isArray(c2)){
 
@@ -110,6 +111,8 @@ define("Expression", ["Range", "lib/sylvester"], function(Range, Sylvester){
                 if (_.isUndefined(c1) || _.isUndefined(c2) || _.isNaN(c1) || _.isNaN(c2)){
                     return undefined 
                 }
+                
+                return c1 + "/" + c2;
 
                 if (_.isArray(c1) || _.isArray(c2)){
 
@@ -166,10 +169,11 @@ define("Expression", ["Range", "lib/sylvester"], function(Range, Sylvester){
             case "+":
                 var c1 = this.children[0].evaluate(context);
                 var c2 = this.children[1].evaluate(context);
-
+                
                 if (_.isUndefined(c1) || _.isUndefined(c2) || _.isNaN(c1) || _.isNaN(c2)){
                     return undefined 
                 }
+                return c1 + "+" + c2;
 
                 if (_.isArray(c1) && _.isArray(c2)){
                     //matrices
