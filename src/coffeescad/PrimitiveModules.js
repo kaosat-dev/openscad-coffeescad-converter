@@ -38,17 +38,11 @@ define("PrimitiveModules", ["Globals", "Context"], function(Globals, Context){
 
         var coffeescadArgs = {start: [0,0,0], end: [0,0,1], radiusStart: 1, radiusEnd: 1, resolution: Globals.DEFAULT_RESOLUTION};
         var isCentered = Context.contextVariableLookup(context, "center", false);
-        var h = Context.contextVariableLookup(context, "h", 1);
+        var height = Context.contextVariableLookup(context, "h", 1);
         var r = Context.contextVariableLookup(context, "r", 1);
         var r1 = Context.contextVariableLookup(context, "r1", undefined);
         var r2 = Context.contextVariableLookup(context, "r2", undefined);
                     
-        var startZ = isCentered? -(h/2) : 0;
-        var endZ = isCentered? h/2 : h;
-
-        coffeescadArgs.start = [0, 0, startZ];
-        coffeescadArgs.end = [0, 0, endZ];
-
         /* we have to check the context vars directly here in case a parent module in the context stack has the same parameters, e.g. r1 which would be used as default.
            Example testcad case:
                 module ring(r1, r2, h) {
@@ -72,8 +66,10 @@ define("PrimitiveModules", ["Globals", "Context"], function(Globals, Context){
         if (coffeescadArgs.radiusStart == 0 && coffeescadArgs.radiusEnd == 0){
             return undefined;
         }
-        coffeescadArgs.height = h;
-	coffeescadArgs.center = isCentered? [0,0,0] : [0,0, -coffeescadArgs.height/2];
+        coffeescadArgs.height = height;
+    
+    var centerVector = (typeof height == 'string' || height instanceof String)? [0,0,height+"/2"] : [0,0,height/2];
+	coffeescadArgs.center = isCentered? [0,0,0] : centerVector;
 	
 	return _.template('new Cylinder({h: <%=height%>,r1: <%=radiusStart%>, r2: <%=radiusEnd%>, center: [<%=center%>], $fn: <%=resolution%>})', coffeescadArgs);
 		
@@ -104,11 +100,6 @@ define("PrimitiveModules", ["Globals", "Context"], function(Globals, Context){
             
             for (var i=0; i<size.length; i++)
             {
-                if(typeof size[i] == 'string' || size[i] instanceof String) 
-                {
-                    console.log("by jove, a string");
-                }
-                console.log("bla",typeof(size[i]));
                 var elem = (typeof size[i] == 'string' || size[i] instanceof String)? size[i]+"/2" : size[i]/2;
                 sizeElems.push( elem );
             }

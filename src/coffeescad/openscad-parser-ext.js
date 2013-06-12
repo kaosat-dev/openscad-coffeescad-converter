@@ -37,6 +37,7 @@ define(["Module", "Context", "Globals", "FunctionDef", "openscad-parser-support"
                 lines.push( varData );
             }
         }
+        lines.push("");
         
         for (var i=0; i< currmodule.modules.length; i++)
         {

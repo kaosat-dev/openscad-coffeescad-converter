@@ -35,7 +35,7 @@ define("Globals", [], function(){
     return {
         DEFAULT_RESOLUTION: 16,
         DEFAULT_2D_RESOLUTION: 16,
-        FN_DEFAULT: 0,
+        FN_DEFAULT: 16,
         FS_DEFAULT: 2.0,
         FA_DEFAULT: 12.0,
         module_stack: [],

@@ -453,7 +453,7 @@ define("Globals", [], function(){
     return {
         DEFAULT_RESOLUTION: 16,
         DEFAULT_2D_RESOLUTION: 16,
-        FN_DEFAULT: 0,
+        FN_DEFAULT: 16,
         FS_DEFAULT: 2.0,
         FA_DEFAULT: 12.0,
         module_stack: [],
@@ -1082,6 +1082,7 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
         if (inst !== undefined) {
             context.args(this.argnames, this.argexpr, inst.argnames, inst.argvalues);
             context.setVariable("$children", inst.children.length);
+            lines.push("assembly.add(new "+ this.name+"())")
         }
 
         context.inst_p = inst;
@@ -1093,18 +1094,80 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
         
         //FIXME
         var specialModule = false;
-        if (this.name !== "root")
+        var args = {};
+        
+        var makeInstanceVars = function(raw)
+        {
+        	keys = Object.keys(args);
+        	for (var i=0; i<keys.length;i++)
+        	{
+        		var varName = keys[i];
+        		re = new RegExp(varName, "g");
+        		try
+        		{
+        			raw = raw.replace(re, "@"+varName);
+        		}
+        		catch(err)
+        		  {}
+        		
+        	}
+        	return raw
+        };
+        
+        
+        
+        if (this.name !== "root" && inst === undefined)
         {
         	specialModule = true;
+        	
+        	for (var i=0; i<this.argnames.length;i++)
+        	{
+        		argVal = this.argexpr[i].evaluate(context);
+        		argName = this.argnames[i];
+        		args[argName] = argVal;
+        	}
+        	
             ln1 = "class " + this.name + " extends Part"
-            ln2 = "  constructor:()->"
-            ln3 = "    super()"
+            ln2 = "  constructor:(options)->"
+            ln3 = "    @defaults = " + JSON.stringify(args);
+            ln4 = "    options = @injectOptions(@defaults,options)"
+            ln5 = "    super(options)"
+            	
             lines.push(ln1)
             lines.push(ln2)
             lines.push(ln3)
+            lines.push(ln4)
+            lines.push(ln5)
+            
+            //make sure we reference the local (instance variable)
+            
+            var checkStuff = function(rootElem){
+            	var localVars = [];
+            	for (var i = 0; i < rootElem.children.length; i++)
+            	{
+            		var child = rootElem.children[i];
+            		if("var_name" in child)
+            		{
+            			var blagh = context.lookupVariable(child.var_name);
+            			if (blagh !== undefined)
+            			{
+            				console.log("pouet",child.var_name);
+            			}
+            			else
+            			{
+            				console.log("gnee",child.var_name);
+            				localVars.push(child.var_name);
+            			}
+            		}
+            		localVars=localVars.concat(checkStuff(child));
+            	}
+            	return localVars;
+            };
             
             _.each(this.assignments_var, function(value, key, list) {
-            	lines.push("    "+ key + " = "+ value.evaluate(context));
+            	var realValue = value.evaluate(context);
+            	realValue = makeInstanceVars(realValue);
+            	lines.push("    "+ key + " = "+ realValue);
             });
             
         }
@@ -1114,9 +1177,6 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
             var tmpRes = child.evaluate(context);
             lines.push(tmpRes);
         });
-        
-       
-        
 
         var controlChildren = _.filter(this.children, function(child){ 
             return child && child.name == "echo"; 
@@ -1130,19 +1190,23 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
             return !child || child.name == "echo"; 
         });
 
-        var evaluatedLines = [];
-        _.each(nonControlChildren, function(child, index, list) {
-            var evaluatedChild = child.evaluate(context)
-            if (specialModule)
-            {
-            	evaluatedChild = "    @union("+evaluatedChild+")"
-            }
-            if (evaluatedChild == undefined || (_.isArray(evaluatedChild) && _.isEmpty(evaluatedChild))){
-                // ignore
-            } else {
-                evaluatedLines.push(evaluatedChild);
-            }
-        });
+        var evaluatedLines = [];//ModuleInstantiation
+        if ( inst === undefined)
+        {
+	        _.each(nonControlChildren, function(child, index, list) {
+	            var evaluatedChild = child.evaluate(context)
+	            if (specialModule)
+	            {
+	            	evaluatedChild = "    @union("+evaluatedChild+")";
+	            	evaluatedChild = makeInstanceVars(evaluatedChild);
+	            }
+	            if (evaluatedChild == undefined || (_.isArray(evaluatedChild) && _.isEmpty(evaluatedChild))){
+	                // ignore
+	            } else {
+	                evaluatedLines.push(evaluatedChild);
+	            }
+	        });
+        }
 
         var cleanedLines = _.compact(evaluatedLines);
         if (cleanedLines.length == 1){
@@ -1155,7 +1219,7 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
         	else
         	{
         		_.each(cleanedLines, function(value, key, list) {
-                	lines.push(value);
+                	lines.push(makeInstanceVars(value));
                 });
         		
         	}
@@ -1229,6 +1293,7 @@ define('openscad-parser-ext',["Module", "Context", "Globals", "FunctionDef", "op
                 lines.push( varData );
             }
         }
+        lines.push("");
         
         for (var i=0; i< currmodule.modules.length; i++)
         {
@@ -3008,17 +3073,11 @@ define("PrimitiveModules", ["Globals", "Context"], function(Globals, Context){
 
         var coffeescadArgs = {start: [0,0,0], end: [0,0,1], radiusStart: 1, radiusEnd: 1, resolution: Globals.DEFAULT_RESOLUTION};
         var isCentered = Context.contextVariableLookup(context, "center", false);
-        var h = Context.contextVariableLookup(context, "h", 1);
+        var height = Context.contextVariableLookup(context, "h", 1);
         var r = Context.contextVariableLookup(context, "r", 1);
         var r1 = Context.contextVariableLookup(context, "r1", undefined);
         var r2 = Context.contextVariableLookup(context, "r2", undefined);
                     
-        var startZ = isCentered? -(h/2) : 0;
-        var endZ = isCentered? h/2 : h;
-
-        coffeescadArgs.start = [0, 0, startZ];
-        coffeescadArgs.end = [0, 0, endZ];
-
         /* we have to check the context vars directly here in case a parent module in the context stack has the same parameters, e.g. r1 which would be used as default.
            Example testcad case:
                 module ring(r1, r2, h) {
@@ -3042,8 +3101,10 @@ define("PrimitiveModules", ["Globals", "Context"], function(Globals, Context){
         if (coffeescadArgs.radiusStart == 0 && coffeescadArgs.radiusEnd == 0){
             return undefined;
         }
-        coffeescadArgs.height = h;
-	coffeescadArgs.center = isCentered? [0,0,0] : [0,0, -coffeescadArgs.height/2];
+        coffeescadArgs.height = height;
+    
+    var centerVector = (typeof height == 'string' || height instanceof String)? [0,0,height+"/2"] : [0,0,height/2];
+	coffeescadArgs.center = isCentered? [0,0,0] : centerVector;
 	
 	return _.template('new Cylinder({h: <%=height%>,r1: <%=radiusStart%>, r2: <%=radiusEnd%>, center: [<%=center%>], $fn: <%=resolution%>})', coffeescadArgs);
 		
@@ -3074,11 +3135,6 @@ define("PrimitiveModules", ["Globals", "Context"], function(Globals, Context){
             
             for (var i=0; i<size.length; i++)
             {
-                if(typeof size[i] == 'string' || size[i] instanceof String) 
-                {
-                    console.log("by jove, a string");
-                }
-                console.log("bla",typeof(size[i]));
                 var elem = (typeof size[i] == 'string' || size[i] instanceof String)? size[i]+"/2" : size[i]/2;
                 sizeElems.push( elem );
             }
