@@ -90,7 +90,7 @@ define("PrimitiveModules", ["Globals", "Context"], function(Globals, Context){
         if (size instanceof Array){
             coffeescadArgs.size = [size[0], size[1], size[2]];
         } else {
-            coffeescadArgs.radius = [size,size,size];
+            coffeescadArgs.size = [size,size,size];
         }
 
         if (isCentered){

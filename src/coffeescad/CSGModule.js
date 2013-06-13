@@ -28,7 +28,8 @@ define("CSGModule", ["Globals", "Context"], function(Globals, Context){
         if (childModules.length <= 1){
             return childModules[0];
         } else {
-            return childModules[0] + "."+this.csgOperation+"([" + childModules.slice(1).join(',\n') + "])";
+            //return childModules[0] + "."+this.csgOperation+"([" + childModules.slice(1).join(',\n') + "])";
+            return this.csgOperation+"([\n"+childModules.join(',\n')+ "])";
         }
     };
 

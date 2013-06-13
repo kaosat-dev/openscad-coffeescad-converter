@@ -754,6 +754,7 @@ define("Context", ["Globals", "openscad-parser-support"], function(Globals, Open
         this.inst_p;
         this.functions_p = {};
         this.modules_p = {};
+        this.rootLevel=false;
         Globals.context_stack.push(this);
     };
 
@@ -795,7 +796,7 @@ define("Context", ["Globals", "openscad-parser-support"], function(Globals, Open
         }
         
         //console.log("WARNING: Ignoring unknown variable '"+name+"'.");    
-        return undefined;
+        return name;
     };
 
 
@@ -814,7 +815,7 @@ define("Context", ["Globals", "openscad-parser-support"], function(Globals, Open
         }
             
         console.log("WARNING: Ignoring unknown function '"+name+"'.");
-        return undefined;
+        return name;
     };
 
     Context.prototype.evaluateModule = function(inst, factory) {
@@ -838,7 +839,7 @@ define("Context", ["Globals", "openscad-parser-support"], function(Globals, Open
         }
 
         console.log("WARNING: Ignoring unknown module: " + inst.name);
-        return undefined;
+        return "new " + inst.name+"( "+inst.argvalues.join() +")";
     };
 
     Context.newContext = function (parentContext, argnames, argexpr, inst) {
@@ -889,31 +890,31 @@ define("Context", ["Globals", "openscad-parser-support"], function(Globals, Open
     var functionNameLookup = {
         "cos":function(degree) {
             if (_.isUndefined(degree)  || _.isNaN(degree)){return undefined;}
-            return Math.cos(deg2rad(degree));
+            return "Math.cos("+degree+" * (Math.PI/180.0) )";
         },
         "sin":function(degree) {
             if (_.isUndefined(degree)  || _.isNaN(degree)){return undefined;}
-            return Math.sin(deg2rad(degree));
-        },
-        "acos":function(degree) {
-            if (_.isUndefined(degree)  || _.isNaN(degree)){return undefined;}
-            return rad2deg(Math.acos(degree));
-        },
-        "asin":function(degree) {
-            if (_.isUndefined(degree)  || _.isNaN(degree)){return undefined;}
-            return rad2deg(Math.asin(degree));
-        },
-        "atan":function(degree) {
-            if (_.isUndefined(degree)  || _.isNaN(degree)){return undefined;}
-            return rad2deg(Math.atan(degree));
-        },
-        "atan2":function(x,y) {
-            if (_.isUndefined(x) || _.isNaN(x) || _.isUndefined(y) || _.isNaN(y)){return undefined;}
-            return rad2deg(Math.atan2(x,y));
+            return "Math.sin("+degree+" * (Math.PI/180.0) )";
         },
         "tan":function(degree) {
             if (_.isUndefined(degree)  || _.isNaN(degree)){return undefined;}
-            return Math.tan(deg2rad(degree));
+            return "Math.tan("+degree+" * (Math.PI/180.0) )";
+        },
+        "acos":function(degree) {
+            if (_.isUndefined(degree)  || _.isNaN(degree)){return undefined;}
+            return "(180/Math.PI) * Math.acos( "+degree+" )";
+        },
+        "asin":function(degree) {
+            if (_.isUndefined(degree)  || _.isNaN(degree)){return undefined;}
+            return "(180/Math.PI) * Math.asin( "+degree+" )";
+        },
+        "atan":function(degree) {
+            if (_.isUndefined(degree)  || _.isNaN(degree)){return undefined;}
+            return "(180/Math.PI) * Math.atan( "+degree+" )";
+        },
+        "atan2":function(x,y) {
+            if (_.isUndefined(x) || _.isNaN(x) || _.isUndefined(y) || _.isNaN(y)){return undefined;}
+            return "(180/Math.PI) * Math.atan2( "+degree+" )";
         },
         "rands":function(min_value,max_value,value_count, seed_value){
             var values = [];
@@ -930,42 +931,58 @@ define("Context", ["Globals", "openscad-parser-support"], function(Globals, Open
             if (_.isUndefined(x)  || _.isNaN(x)){return undefined;}
 
             // This is because Javascript rounds negative numbers up, whereas c++ rounds down
-            return (x<0)? -(Math.round(Math.abs(x))) : Math.round(x);
+            return (x<0)? "-(Math.round(Math.abs("+x+")))" : "Math.round("+x+")";
         },
         "exp":function(x) {
             if (_.isUndefined(x)  || _.isNaN(x)){return undefined;}
 
-            return Math.exp(x);
+            //return Math.exp(x);
+            return "Math.exp("+ x +")"
         },
         "abs":function(x){
-            if (_.isUndefined(x)  || _.isNaN(x)){return undefined;}
-            return Math.abs(x);
+            //if (_.isUndefined(x)  || _.isNaN(x)){return undefined;}
+            //return Math.abs(x);
+        	return "Math.abs("+ x +")"
         },
         "max":function(){
-            return Math.max.apply(null, _.map(arguments, function(num){ return num ? num : -Infinity; }));
+        	var args = []
+        	for (var i = 0; i < arguments.length; i++)
+        	{
+        		var arg = arguments[i];
+        		args.push(arg);
+        	}
+        	return "Math.max("+args.join()+")";
+            //return Math.max.apply(null, _.map(arguments, function(num){ return num ? num : -Infinity; }));
         },
         "min":function(){
-            return Math.min.apply(null, _.map(arguments, function(num){ return num ? num : Infinity; }));
+        	var args = []
+        	for (var i = 0; i < arguments.length; i++)
+        	{
+        		var arg = arguments[i];
+        		args.push(arg);
+        	}
+        	return "Math.min("+args.join()+")";
+            //return Math.min.apply(null, _.map(arguments, function(num){ return num ? num : Infinity; }));
         },
         "pow":function(x) {
             if (_.isUndefined(x)  || _.isNaN(x)){return undefined;}
-            return Math.pow(x);
+            return "Math.pow( "+x+" )";
         },
         "ln":function(x) {
             if (_.isUndefined(x)  || _.isNaN(x)){return undefined;}
-            return Math.log(x);
+            return "Math.log( "+x+" )";
         },
         "ceil":function(x) {
             if (_.isUndefined(x)  || _.isNaN(x)){return undefined;}
-            return Math.ceil(x);
+            return "Math.ceil( "+x+" )";
         },
         "floor":function(x) {
             if (_.isUndefined(x)  || _.isNaN(x)){return undefined;}
-            return Math.floor(x);
+            return "Math.floor( "+x+" )";
         },
         "sqrt":function(x) {
             if (_.isUndefined(x)  || _.isNaN(x)){return undefined;}
-            return Math.sqrt(x);
+            return "Math.sqrt( "+x+" )";
         },
         "len":function(x){
             if (_.isUndefined(x)  || _.isNaN(x)){return undefined;}
@@ -1082,7 +1099,29 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
         if (inst !== undefined) {
             context.args(this.argnames, this.argexpr, inst.argnames, inst.argvalues);
             context.setVariable("$children", inst.children.length);
-            lines.push("assembly.add(new "+ this.name+"())")
+            
+            var atRootContext = false;
+            try
+            {
+            	if(inst.context.parentContext.parentContext === undefined)
+            	{
+            		atRootContext=true;
+            	}
+            }
+            catch(err){}
+            
+            
+            if (atRootContext)
+            {
+            	lines.push("assembly.add(new "+ this.name+"())")
+            }
+            else
+            {
+            	//lines.push("@union(new "+ this.name+"())")
+            	lines.push(this.name+"()");
+            }
+            //lines.push(this.name);
+            
         }
 
         context.inst_p = inst;
@@ -1098,6 +1137,7 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
         
         var makeInstanceVars = function(raw)
         {
+        	//make sure we reference the local (instance variable)
         	keys = Object.keys(args);
         	for (var i=0; i<keys.length;i++)
         	{
@@ -1119,12 +1159,21 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
         if (this.name !== "root" && inst === undefined)
         {
         	specialModule = true;
+        	context.rootLevel=true;
         	
         	for (var i=0; i<this.argnames.length;i++)
-        	{
-        		argVal = this.argexpr[i].evaluate(context);
-        		argName = this.argnames[i];
-        		args[argName] = argVal;
+        	{	
+        		if ( this.argexpr[i] !== undefined)
+        		{
+        			argVal = this.argexpr[i].evaluate(context);
+        		}
+        		else
+        		{
+        			argVal = 0;
+        		}
+    			argName = this.argnames[i];
+    			args[argName] = argVal;
+        		
         	}
         	
             ln1 = "class " + this.name + " extends Part"
@@ -1138,31 +1187,6 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
             lines.push(ln3)
             lines.push(ln4)
             lines.push(ln5)
-            
-            //make sure we reference the local (instance variable)
-            
-            var checkStuff = function(rootElem){
-            	var localVars = [];
-            	for (var i = 0; i < rootElem.children.length; i++)
-            	{
-            		var child = rootElem.children[i];
-            		if("var_name" in child)
-            		{
-            			var blagh = context.lookupVariable(child.var_name);
-            			if (blagh !== undefined)
-            			{
-            				console.log("pouet",child.var_name);
-            			}
-            			else
-            			{
-            				console.log("gnee",child.var_name);
-            				localVars.push(child.var_name);
-            			}
-            		}
-            		localVars=localVars.concat(checkStuff(child));
-            	}
-            	return localVars;
-            };
             
             _.each(this.assignments_var, function(value, key, list) {
             	var realValue = value.evaluate(context);
@@ -1214,7 +1238,13 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
         } else if (cleanedLines.length > 1){
         	if (!specialModule)
         	{
-        		lines.push(_.first(cleanedLines)+".union([" +_.rest(cleanedLines)+"])");
+        		//for (var i=0;i<cleanedLines.length;i++)
+        		//lines.push(_.first(cleanedLines)+".union([" +_.rest(cleanedLines)+"])");
+        		
+        		_.each(cleanedLines, function(value, key, list) {
+        			lines.push("@union("+value+")");
+                });
+        		
         	}
         	else
         	{
@@ -1288,7 +1318,8 @@ define('openscad-parser-ext',["Module", "Context", "Globals", "FunctionDef", "op
         {
             if(currmodule.assignments_var.hasOwnProperty(vName))
             {
-                var varData = vName + " = " + currmodule.assignments_var[vName].const_value;
+            	var varValue = currmodule.assignments_var[vName].evaluate(context);
+                var varData = vName + " = " + varValue;//currmodule.assignments_var[vName].const_value;
                 variables.push( varData );
                 lines.push( varData );
             }
@@ -2863,6 +2894,7 @@ define("Expression", ["Range", "lib/sylvester"], function(Range, Sylvester){
                 var c1 = this.children[0].evaluate(context);
                 var c2 = this.children[1].evaluate(context);
 
+                return c1 + "-" + c2;
                 if (_.isUndefined(c1) || _.isUndefined(c2) || _.isNaN(c1) || _.isNaN(c2)){
                     return undefined 
                 }
@@ -2989,7 +3021,8 @@ define("Expression", ["Range", "lib/sylvester"], function(Range, Sylvester){
                 return this.children[v ? 1 : 2].evaluate(context);
                 break;
             case "I":
-                return -this.children[0].evaluate(context);
+                //return -this.children[0].evaluate(context);
+            	return "-"+this.children[0].evaluate(context);
                 break;
             case "C":
                 return this.const_value;
@@ -3023,8 +3056,8 @@ define("Expression", ["Range", "lib/sylvester"], function(Range, Sylvester){
                 for (var i = 0; i < this.children.length; i++){
                       argvalues.push(this.children[i].evaluate(context));
                 }
-
                 return context.evaluateFunction(this.call_funcname, this.call_argnames, argvalues);
+                
                 break;
             default: 
                 console.log("todo - evaluate expression", this);
@@ -3125,7 +3158,7 @@ define("PrimitiveModules", ["Globals", "Context"], function(Globals, Context){
         if (size instanceof Array){
             coffeescadArgs.size = [size[0], size[1], size[2]];
         } else {
-            coffeescadArgs.radius = [size,size,size];
+            coffeescadArgs.size = [size,size,size];
         }
 
         if (isCentered){
@@ -3325,7 +3358,7 @@ define("TransformModules", ["Globals", "Context"], function(Globals, Context){
         }
 
         return this.transformChildren(inst.children, context, function(){
-            return _.template('.setColor(<%=color%>)', {color:color});
+            return _.template('.color(<%=color%>)', {color:color});
         });
     };
 
@@ -3376,7 +3409,7 @@ define("TransformModules", ["Globals", "Context"], function(Globals, Context){
 
         if (_.isArray(a)){
             return this.transformChildren(inst.children, context, function(){
-                return _.template('.rotateX(<%=degreeX%>).rotateY(<%=degreeY%>).rotateZ(<%=degreeZ%>)', {degreeX:a[0],degreeY:a[1],degreeZ:a[2]});
+                return _.template('.rotate([<%=degreeX%>,<%=degreeY%>,(<%=degreeZ%>])', {degreeX:a[0],degreeY:a[1],degreeZ:a[2]});
             });
         } else {
             var v = Context.contextVariableLookup(context, "v", undefined);
@@ -3433,6 +3466,8 @@ define("TransformModules", ["Globals", "Context"], function(Globals, Context){
 
         var v = Context.contextVariableLookup(context, "v", [0,0,0]);
 
+        //return _.template('.translate([<%=v%>])', {v:v});
+        
         return this.transformChildren(inst.children, context, function(){
             return _.template('.translate([<%=v%>])', {v:v});
         });
@@ -3722,7 +3757,8 @@ define("CSGModule", ["Globals", "Context"], function(Globals, Context){
         if (childModules.length <= 1){
             return childModules[0];
         } else {
-            return childModules[0] + "."+this.csgOperation+"([" + childModules.slice(1).join(',\n') + "])";
+            //return childModules[0] + "."+this.csgOperation+"([" + childModules.slice(1).join(',\n') + "])";
+            return this.csgOperation+"([\n"+childModules.join(',\n')+ "])";
         }
     };
 
@@ -5185,6 +5221,7 @@ break;
 case 32:/* Ignore */
 break;
 case 33:/* Ignore Note: multi-line comments are removed via a preparse regex. */
+	console.log("here multi ligne comment?");
 break;
 case 34:return 40
 break;

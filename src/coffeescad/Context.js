@@ -10,6 +10,7 @@ define("Context", ["Globals", "openscad-parser-support"], function(Globals, Open
         this.inst_p;
         this.functions_p = {};
         this.modules_p = {};
+        this.rootLevel=false;
         Globals.context_stack.push(this);
     };
 
@@ -51,7 +52,7 @@ define("Context", ["Globals", "openscad-parser-support"], function(Globals, Open
         }
         
         //console.log("WARNING: Ignoring unknown variable '"+name+"'.");    
-        return undefined;
+        return name;
     };
 
 
@@ -70,7 +71,7 @@ define("Context", ["Globals", "openscad-parser-support"], function(Globals, Open
         }
             
         console.log("WARNING: Ignoring unknown function '"+name+"'.");
-        return undefined;
+        return name;
     };
 
     Context.prototype.evaluateModule = function(inst, factory) {
@@ -94,7 +95,7 @@ define("Context", ["Globals", "openscad-parser-support"], function(Globals, Open
         }
 
         console.log("WARNING: Ignoring unknown module: " + inst.name);
-        return undefined;
+        return "new " + inst.name+"( "+inst.argvalues.join() +")";
     };
 
     Context.newContext = function (parentContext, argnames, argexpr, inst) {
@@ -145,31 +146,31 @@ define("Context", ["Globals", "openscad-parser-support"], function(Globals, Open
     var functionNameLookup = {
         "cos":function(degree) {
             if (_.isUndefined(degree)  || _.isNaN(degree)){return undefined;}
-            return Math.cos(deg2rad(degree));
+            return "Math.cos("+degree+" * (Math.PI/180.0) )";
         },
         "sin":function(degree) {
             if (_.isUndefined(degree)  || _.isNaN(degree)){return undefined;}
-            return Math.sin(deg2rad(degree));
-        },
-        "acos":function(degree) {
-            if (_.isUndefined(degree)  || _.isNaN(degree)){return undefined;}
-            return rad2deg(Math.acos(degree));
-        },
-        "asin":function(degree) {
-            if (_.isUndefined(degree)  || _.isNaN(degree)){return undefined;}
-            return rad2deg(Math.asin(degree));
-        },
-        "atan":function(degree) {
-            if (_.isUndefined(degree)  || _.isNaN(degree)){return undefined;}
-            return rad2deg(Math.atan(degree));
-        },
-        "atan2":function(x,y) {
-            if (_.isUndefined(x) || _.isNaN(x) || _.isUndefined(y) || _.isNaN(y)){return undefined;}
-            return rad2deg(Math.atan2(x,y));
+            return "Math.sin("+degree+" * (Math.PI/180.0) )";
         },
         "tan":function(degree) {
             if (_.isUndefined(degree)  || _.isNaN(degree)){return undefined;}
-            return Math.tan(deg2rad(degree));
+            return "Math.tan("+degree+" * (Math.PI/180.0) )";
+        },
+        "acos":function(degree) {
+            if (_.isUndefined(degree)  || _.isNaN(degree)){return undefined;}
+            return "(180/Math.PI) * Math.acos( "+degree+" )";
+        },
+        "asin":function(degree) {
+            if (_.isUndefined(degree)  || _.isNaN(degree)){return undefined;}
+            return "(180/Math.PI) * Math.asin( "+degree+" )";
+        },
+        "atan":function(degree) {
+            if (_.isUndefined(degree)  || _.isNaN(degree)){return undefined;}
+            return "(180/Math.PI) * Math.atan( "+degree+" )";
+        },
+        "atan2":function(x,y) {
+            if (_.isUndefined(x) || _.isNaN(x) || _.isUndefined(y) || _.isNaN(y)){return undefined;}
+            return "(180/Math.PI) * Math.atan2( "+degree+" )";
         },
         "rands":function(min_value,max_value,value_count, seed_value){
             var values = [];
@@ -186,42 +187,58 @@ define("Context", ["Globals", "openscad-parser-support"], function(Globals, Open
             if (_.isUndefined(x)  || _.isNaN(x)){return undefined;}
 
             // This is because Javascript rounds negative numbers up, whereas c++ rounds down
-            return (x<0)? -(Math.round(Math.abs(x))) : Math.round(x);
+            return (x<0)? "-(Math.round(Math.abs("+x+")))" : "Math.round("+x+")";
         },
         "exp":function(x) {
             if (_.isUndefined(x)  || _.isNaN(x)){return undefined;}
 
-            return Math.exp(x);
+            //return Math.exp(x);
+            return "Math.exp("+ x +")"
         },
         "abs":function(x){
-            if (_.isUndefined(x)  || _.isNaN(x)){return undefined;}
-            return Math.abs(x);
+            //if (_.isUndefined(x)  || _.isNaN(x)){return undefined;}
+            //return Math.abs(x);
+        	return "Math.abs("+ x +")"
         },
         "max":function(){
-            return Math.max.apply(null, _.map(arguments, function(num){ return num ? num : -Infinity; }));
+        	var args = []
+        	for (var i = 0; i < arguments.length; i++)
+        	{
+        		var arg = arguments[i];
+        		args.push(arg);
+        	}
+        	return "Math.max("+args.join()+")";
+            //return Math.max.apply(null, _.map(arguments, function(num){ return num ? num : -Infinity; }));
         },
         "min":function(){
-            return Math.min.apply(null, _.map(arguments, function(num){ return num ? num : Infinity; }));
+        	var args = []
+        	for (var i = 0; i < arguments.length; i++)
+        	{
+        		var arg = arguments[i];
+        		args.push(arg);
+        	}
+        	return "Math.min("+args.join()+")";
+            //return Math.min.apply(null, _.map(arguments, function(num){ return num ? num : Infinity; }));
         },
         "pow":function(x) {
             if (_.isUndefined(x)  || _.isNaN(x)){return undefined;}
-            return Math.pow(x);
+            return "Math.pow( "+x+" )";
         },
         "ln":function(x) {
             if (_.isUndefined(x)  || _.isNaN(x)){return undefined;}
-            return Math.log(x);
+            return "Math.log( "+x+" )";
         },
         "ceil":function(x) {
             if (_.isUndefined(x)  || _.isNaN(x)){return undefined;}
-            return Math.ceil(x);
+            return "Math.ceil( "+x+" )";
         },
         "floor":function(x) {
             if (_.isUndefined(x)  || _.isNaN(x)){return undefined;}
-            return Math.floor(x);
+            return "Math.floor( "+x+" )";
         },
         "sqrt":function(x) {
             if (_.isUndefined(x)  || _.isNaN(x)){return undefined;}
-            return Math.sqrt(x);
+            return "Math.sqrt( "+x+" )";
         },
         "len":function(x){
             if (_.isUndefined(x)  || _.isNaN(x)){return undefined;}

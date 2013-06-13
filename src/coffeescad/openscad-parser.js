@@ -770,6 +770,7 @@ break;
 case 32:/* Ignore */
 break;
 case 33:/* Ignore Note: multi-line comments are removed via a preparse regex. */
+	console.log("here multi ligne comment?");
 break;
 case 34:return 40
 break;

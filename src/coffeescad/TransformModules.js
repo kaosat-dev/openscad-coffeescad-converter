@@ -58,7 +58,7 @@ define("TransformModules", ["Globals", "Context"], function(Globals, Context){
         }
 
         return this.transformChildren(inst.children, context, function(){
-            return _.template('.setColor(<%=color%>)', {color:color});
+            return _.template('.color(<%=color%>)', {color:color});
         });
     };
 
@@ -109,7 +109,7 @@ define("TransformModules", ["Globals", "Context"], function(Globals, Context){
 
         if (_.isArray(a)){
             return this.transformChildren(inst.children, context, function(){
-                return _.template('.rotateX(<%=degreeX%>).rotateY(<%=degreeY%>).rotateZ(<%=degreeZ%>)', {degreeX:a[0],degreeY:a[1],degreeZ:a[2]});
+                return _.template('.rotate([<%=degreeX%>,<%=degreeY%>,(<%=degreeZ%>])', {degreeX:a[0],degreeY:a[1],degreeZ:a[2]});
             });
         } else {
             var v = Context.contextVariableLookup(context, "v", undefined);
@@ -166,6 +166,8 @@ define("TransformModules", ["Globals", "Context"], function(Globals, Context){
 
         var v = Context.contextVariableLookup(context, "v", [0,0,0]);
 
+        //return _.template('.translate([<%=v%>])', {v:v});
+        
         return this.transformChildren(inst.children, context, function(){
             return _.template('.translate([<%=v%>])', {v:v});
         });

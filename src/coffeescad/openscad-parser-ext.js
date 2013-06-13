@@ -32,7 +32,8 @@ define(["Module", "Context", "Globals", "FunctionDef", "openscad-parser-support"
         {
             if(currmodule.assignments_var.hasOwnProperty(vName))
             {
-                var varData = vName + " = " + currmodule.assignments_var[vName].const_value;
+            	var varValue = currmodule.assignments_var[vName].evaluate(context);
+                var varData = vName + " = " + varValue;//currmodule.assignments_var[vName].const_value;
                 variables.push( varData );
                 lines.push( varData );
             }

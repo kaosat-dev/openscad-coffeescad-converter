@@ -203,6 +203,7 @@ define("Expression", ["Range", "lib/sylvester"], function(Range, Sylvester){
                 var c1 = this.children[0].evaluate(context);
                 var c2 = this.children[1].evaluate(context);
 
+                return c1 + "-" + c2;
                 if (_.isUndefined(c1) || _.isUndefined(c2) || _.isNaN(c1) || _.isNaN(c2)){
                     return undefined 
                 }
@@ -329,7 +330,8 @@ define("Expression", ["Range", "lib/sylvester"], function(Range, Sylvester){
                 return this.children[v ? 1 : 2].evaluate(context);
                 break;
             case "I":
-                return -this.children[0].evaluate(context);
+                //return -this.children[0].evaluate(context);
+            	return "-"+this.children[0].evaluate(context);
                 break;
             case "C":
                 return this.const_value;
@@ -363,8 +365,8 @@ define("Expression", ["Range", "lib/sylvester"], function(Range, Sylvester){
                 for (var i = 0; i < this.children.length; i++){
                       argvalues.push(this.children[i].evaluate(context));
                 }
-
                 return context.evaluateFunction(this.call_funcname, this.call_argnames, argvalues);
+                
                 break;
             default: 
                 console.log("todo - evaluate expression", this);

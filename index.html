@@ -10,8 +10,11 @@
 <script type="text/javascript" src="./lib/jquery.js"></script>
 <script src="./dist/web-built-coffeescad.js"></script>
 
-	Put some code in there, skipper
-	<textarea id="txt" style="width:400px; height:400px">
+<div>
+		Put some code in there, skipper
+</div>
+<div>
+	<textarea id="txt" style="width:45%; height:400px">
 //sphere(r=7,$fn=30);
 //some comment
 
@@ -39,11 +42,15 @@ module mount()
 }
 //mount();
 	</textarea>
-	<textarea id="result" style="width:400px; height:400px">
+	<textarea id="result" style="width:45%; height:400px">
 	</textarea>
+</div>
+<div>
 	<button onClick="$('#result').val(openscadCoffeeScadParser.parse($('#txt').val()));">
 		Clicky
 	</button>
+</div>
+
 
 
 </body>
