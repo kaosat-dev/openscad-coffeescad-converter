@@ -44,7 +44,7 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
             else
             {
             	//lines.push("@union(new "+ this.name+"())")
-            	lines.push(this.name+"()");
+            	lines.push("new "+this.name+"()");
             }
             //lines.push(this.name);
             
