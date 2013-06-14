@@ -10,7 +10,7 @@ define(["Module", "Context", "Globals", "FunctionDef", "openscad-parser-support"
     }
 
     function processModule(yy){
-	console.log("processing module",yy);
+    	console.log("processing module",yy);
         var lines = [];
         //lines.push("function main(){");
         //lines.push("\n");
@@ -40,12 +40,7 @@ define(["Module", "Context", "Globals", "FunctionDef", "openscad-parser-support"
         }
         lines.push("");
         
-        for (var i=0; i< currmodule.modules.length; i++)
-        {
-        	bla = currmodule.modules[i];
-        	var fakeYY = {}
-        	//processModule(bla);
-        }
+        
         var res = currmodule.evaluate(context);
 
         var evaluatedLines = _.flatten(res);
@@ -77,7 +72,6 @@ define(["Module", "Context", "Globals", "FunctionDef", "openscad-parser-support"
         Globals.module_stack.push(currmodule);
         
         currmodule = new Module(newName);
-
         p_currmodule.modules.push(currmodule);
 
         currmodule.argnames = newArgNames;

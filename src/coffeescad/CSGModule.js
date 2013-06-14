@@ -29,7 +29,9 @@ define("CSGModule", ["Globals", "Context"], function(Globals, Context){
             return childModules[0];
         } else {
             //return childModules[0] + "."+this.csgOperation+"([" + childModules.slice(1).join(',\n') + "])";
-            return this.csgOperation+"([\n"+childModules.join(',\n')+ "])";
+        	var indentLevel = Array(context.level).join("  ")
+        	var csgOpResult = this.csgOperation+"(["+_.first(childModules)+',\n'+_.rest(childModules,0).join('\n'+indentLevel)+ "])";
+            return csgOpResult;//childModules.join('\n'+indentLevel)+ "])";
         }
     };
 

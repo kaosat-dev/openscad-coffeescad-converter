@@ -35,7 +35,6 @@ define("PrimitiveModules", ["Globals", "Context"], function(Globals, Context){
         var argexpr = [];
 
         context.args(argnames, argexpr, inst.argnames, inst.argvalues);
-
         var coffeescadArgs = {start: [0,0,0], end: [0,0,1], radiusStart: 1, radiusEnd: 1, resolution: Globals.DEFAULT_RESOLUTION};
         var isCentered = Context.contextVariableLookup(context, "center", false);
         var height = Context.contextVariableLookup(context, "h", 1);
@@ -68,10 +67,11 @@ define("PrimitiveModules", ["Globals", "Context"], function(Globals, Context){
         }
         coffeescadArgs.height = height;
     
-    var centerVector = (typeof height == 'string' || height instanceof String)? [0,0,height+"/2"] : [0,0,height/2];
-	coffeescadArgs.center = isCentered? [0,0,0] : centerVector;
+    var centerVector = (typeof height == 'string' || height instanceof String) ? [0,0,height+"/2"] : [0,0,height/2];
+    console.log("isCentered",isCentered,centerVector);
+	coffeescadArgs.center = (isCentered === true || isCentered ===false) ? isCentered : "["+centerVector+"]";
 	
-	return _.template('new Cylinder({h: <%=height%>,r1: <%=radiusStart%>, r2: <%=radiusEnd%>, center: [<%=center%>], $fn: <%=resolution%>})', coffeescadArgs);
+	return _.template('new Cylinder({h: <%=height%>,r1: <%=radiusStart%>, r2: <%=radiusEnd%>, center: <%=center%>, $fn: <%=resolution%>})', coffeescadArgs);
 		
     };
 
@@ -106,8 +106,14 @@ define("PrimitiveModules", ["Globals", "Context"], function(Globals, Context){
             
             coffeescadArgs.centerVector = [sizeElems[0],sizeElems[1],sizeElems[2]];
         }
-
-        return _.template('new Cube({center: [<%=String(centerVector)%>],size: [<%= size %>], $fn: <%= resolution%>})', coffeescadArgs);
+        //, $fn: <%= resolution%>
+        //TODO:cleanup 
+        if ("center" in context.vars)
+        {
+        	return _.template('new Cube({center: [<%=String(centerVector)%>],size: [<%= size %>]})', coffeescadArgs);
+        }
+        return _.template('new Cube({size: [<%= size %>]})', coffeescadArgs);
+        
     };
 
 

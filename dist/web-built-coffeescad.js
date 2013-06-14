@@ -754,7 +754,10 @@ define("Context", ["Globals", "openscad-parser-support"], function(Globals, Open
         this.inst_p;
         this.functions_p = {};
         this.modules_p = {};
+        
         this.rootLevel=false;
+        this.level = 0;
+        
         Globals.context_stack.push(this);
     };
 
@@ -839,7 +842,12 @@ define("Context", ["Globals", "openscad-parser-support"], function(Globals, Open
         }
 
         console.log("WARNING: Ignoring unknown module: " + inst.name);
-        return "new " + inst.name+"( "+inst.argvalues.join() +")";
+        if (inst.argvalues instanceof(Array))
+    	{
+        	inst.argvalues = _.compact(inst.argvalues);
+    	}
+        var evaluatedModule = "new " + inst.name+"( "+inst.argvalues +")";
+        return evaluatedModule
     };
 
     Context.newContext = function (parentContext, argnames, argexpr, inst) {
@@ -1082,13 +1090,15 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
         this.modules = [];
         this.argnames = [];
         this.argexpr = [];
+        
+        this.level = 0;
     };
 
     Module.prototype.evaluate = function(parentContext, inst) {
 	console.log("evalueating module",parentContext, inst);
         var lines = [];
-
         var context = new Context(parentContext);
+        context.level = parentContext.level +1 ;
 
         if (parentContext === undefined){
             context.setVariable("$fn", Globals.DEFAULT_RESOLUTION);
@@ -1111,16 +1121,15 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
             catch(err){}
             
             
-            if (atRootContext)
+            if (context.level === 1)
             {
-            	lines.push("assembly.add(new "+ this.name+"())")
+            	lines.push("assembly.add(new "+ this.name+"( "+inst.argvalues+" ))")
             }
             else
             {
-            	//lines.push("@union(new "+ this.name+"())")
-            	lines.push("new "+this.name+"()");
+            	
+            	lines.push("new "+this.name+"( "+ inst.argvalues +" )");
             }
-            //lines.push(this.name);
             
         }
 
@@ -1160,6 +1169,8 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
         {
         	specialModule = true;
         	context.rootLevel=true;
+        	console.log("Module name:",this.name, " level ", this.level);
+        	
         	
         	for (var i=0; i<this.argnames.length;i++)
         	{	
@@ -1175,12 +1186,14 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
     			args[argName] = argVal;
         		
         	}
+        	indentLevel = Array(context.level-1).join("  ")
         	
-            ln1 = "class " + this.name + " extends Part"
-            ln2 = "  constructor:(options)->"
-            ln3 = "    @defaults = " + JSON.stringify(args);
-            ln4 = "    options = @injectOptions(@defaults,options)"
-            ln5 = "    super(options)"
+            ln1 = indentLevel+"class " + this.name + " extends Part"
+            ln2 = indentLevel+"  constructor:(options)->"
+            ln3 = indentLevel+"    @defaults = " + JSON.stringify(args);
+            ln4 = indentLevel+"    options = @injectOptions(@defaults,options)"
+            ln5 = indentLevel+"    super(options)"
+            context.indentLevel = indentLevel+4;
             	
             lines.push(ln1)
             lines.push(ln2)
@@ -1197,10 +1210,14 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
         }
         
         var someResult = []
-        _.each(context.modules_p, function(child, index, list) {
-            var tmpRes = child.evaluate(context);
-            lines.push(tmpRes);
-        });
+        if ( inst === undefined)
+        {
+        	_.each(context.modules_p, function(child, index, list) {
+                var tmpRes = child.evaluate(context);
+                lines.push(tmpRes);
+            });
+        }
+        
 
         var controlChildren = _.filter(this.children, function(child){ 
             return child && child.name == "echo"; 
@@ -1221,7 +1238,20 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
 	            var evaluatedChild = child.evaluate(context)
 	            if (specialModule)
 	            {
-	            	evaluatedChild = "    @union("+evaluatedChild+")";
+	            	console.log ("bleh",evaluatedChild instanceof(Array));
+	            	if (evaluatedChild instanceof(Array))
+	            	{
+	            		evaluatedChild = _.compact(evaluatedChild);
+	            		
+	            	}
+	            	if (child.children.length > 1) //if we have potential multiline content
+	            	{
+	            		evaluatedChild = "    @union( \n"+evaluatedChild+"\n )";
+	            	}
+	            	else{
+	            		evaluatedChild = "    @union( "+evaluatedChild+" )";
+	            	}
+	            	
 	            	evaluatedChild = makeInstanceVars(evaluatedChild);
 	            }
 	            if (evaluatedChild == undefined || (_.isArray(evaluatedChild) && _.isEmpty(evaluatedChild))){
@@ -1240,9 +1270,17 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
         	{
         		//for (var i=0;i<cleanedLines.length;i++)
         		//lines.push(_.first(cleanedLines)+".union([" +_.rest(cleanedLines)+"])");
-        		
-        		_.each(cleanedLines, function(value, key, list) {
-        			lines.push("@union("+value+")");
+        		var that = this;
+        		_.each(cleanedLines, function(value, key, list) 
+        		{
+        			if (context.level === 1)
+        			{
+        				lines.push("assembly.add("+value+")");
+        			}
+        			else
+        			{
+        				lines.push("@union("+value+")");
+        			}
                 });
         		
         	}
@@ -1296,7 +1334,7 @@ define('openscad-parser-ext',["Module", "Context", "Globals", "FunctionDef", "op
     }
 
     function processModule(yy){
-	console.log("processing module",yy);
+    	console.log("processing module",yy);
         var lines = [];
         //lines.push("function main(){");
         //lines.push("\n");
@@ -1326,12 +1364,7 @@ define('openscad-parser-ext',["Module", "Context", "Globals", "FunctionDef", "op
         }
         lines.push("");
         
-        for (var i=0; i< currmodule.modules.length; i++)
-        {
-        	bla = currmodule.modules[i];
-        	var fakeYY = {}
-        	//processModule(bla);
-        }
+        
         var res = currmodule.evaluate(context);
 
         var evaluatedLines = _.flatten(res);
@@ -1363,7 +1396,6 @@ define('openscad-parser-ext',["Module", "Context", "Globals", "FunctionDef", "op
         Globals.module_stack.push(currmodule);
         
         currmodule = new Module(newName);
-
         p_currmodule.modules.push(currmodule);
 
         currmodule.argnames = newArgNames;
@@ -3103,7 +3135,6 @@ define("PrimitiveModules", ["Globals", "Context"], function(Globals, Context){
         var argexpr = [];
 
         context.args(argnames, argexpr, inst.argnames, inst.argvalues);
-
         var coffeescadArgs = {start: [0,0,0], end: [0,0,1], radiusStart: 1, radiusEnd: 1, resolution: Globals.DEFAULT_RESOLUTION};
         var isCentered = Context.contextVariableLookup(context, "center", false);
         var height = Context.contextVariableLookup(context, "h", 1);
@@ -3136,10 +3167,11 @@ define("PrimitiveModules", ["Globals", "Context"], function(Globals, Context){
         }
         coffeescadArgs.height = height;
     
-    var centerVector = (typeof height == 'string' || height instanceof String)? [0,0,height+"/2"] : [0,0,height/2];
-	coffeescadArgs.center = isCentered? [0,0,0] : centerVector;
+    var centerVector = (typeof height == 'string' || height instanceof String) ? [0,0,height+"/2"] : [0,0,height/2];
+    console.log("isCentered",isCentered,centerVector);
+	coffeescadArgs.center = (isCentered === true || isCentered ===false) ? isCentered : "["+centerVector+"]";
 	
-	return _.template('new Cylinder({h: <%=height%>,r1: <%=radiusStart%>, r2: <%=radiusEnd%>, center: [<%=center%>], $fn: <%=resolution%>})', coffeescadArgs);
+	return _.template('new Cylinder({h: <%=height%>,r1: <%=radiusStart%>, r2: <%=radiusEnd%>, center: <%=center%>, $fn: <%=resolution%>})', coffeescadArgs);
 		
     };
 
@@ -3174,8 +3206,14 @@ define("PrimitiveModules", ["Globals", "Context"], function(Globals, Context){
             
             coffeescadArgs.centerVector = [sizeElems[0],sizeElems[1],sizeElems[2]];
         }
-
-        return _.template('new Cube({center: [<%=String(centerVector)%>],size: [<%= size %>], $fn: <%= resolution%>})', coffeescadArgs);
+        //, $fn: <%= resolution%>
+        //TODO:cleanup 
+        if ("center" in context.vars)
+        {
+        	return _.template('new Cube({center: [<%=String(centerVector)%>],size: [<%= size %>]})', coffeescadArgs);
+        }
+        return _.template('new Cube({size: [<%= size %>]})', coffeescadArgs);
+        
     };
 
 
@@ -3316,6 +3354,10 @@ define("TransformModules", ["Globals", "Context"], function(Globals, Context){
 		        });
 		        var childAdaptor = factory.getAdaptor(childInst);
 		        var transformedChild = childAdaptor.evaluate(context, childInst);
+		        if (transformedChild instanceof(Array))
+            	{
+		        	transformedChild = _.compact(transformedChild);
+            	}
                 if (transformedChild){
                     transformedChild += cb();
                     childModules.push(transformedChild);
@@ -3409,7 +3451,7 @@ define("TransformModules", ["Globals", "Context"], function(Globals, Context){
 
         if (_.isArray(a)){
             return this.transformChildren(inst.children, context, function(){
-                return _.template('.rotate([<%=degreeX%>,<%=degreeY%>,(<%=degreeZ%>])', {degreeX:a[0],degreeY:a[1],degreeZ:a[2]});
+                return _.template('.rotate([<%=degreeX%>,<%=degreeY%>,<%=degreeZ%>])', {degreeX:a[0],degreeY:a[1],degreeZ:a[2]});
             });
         } else {
             var v = Context.contextVariableLookup(context, "v", undefined);
@@ -3469,7 +3511,8 @@ define("TransformModules", ["Globals", "Context"], function(Globals, Context){
         //return _.template('.translate([<%=v%>])', {v:v});
         
         return this.transformChildren(inst.children, context, function(){
-            return _.template('.translate([<%=v%>])', {v:v});
+        	result = _.template('.translate([<%=v%>])', {v:v});
+            return result;
         });
 
     };
@@ -3758,7 +3801,9 @@ define("CSGModule", ["Globals", "Context"], function(Globals, Context){
             return childModules[0];
         } else {
             //return childModules[0] + "."+this.csgOperation+"([" + childModules.slice(1).join(',\n') + "])";
-            return this.csgOperation+"([\n"+childModules.join(',\n')+ "])";
+        	var indentLevel = Array(context.level).join("  ")
+        	var csgOpResult = this.csgOperation+"(["+_.first(childModules)+',\n'+_.rest(childModules,0).join('\n'+indentLevel)+ "])";
+            return csgOpResult;//childModules.join('\n'+indentLevel)+ "])";
         }
     };
 

@@ -10,7 +10,10 @@ define("Context", ["Globals", "openscad-parser-support"], function(Globals, Open
         this.inst_p;
         this.functions_p = {};
         this.modules_p = {};
+        
         this.rootLevel=false;
+        this.level = 0;
+        
         Globals.context_stack.push(this);
     };
 
@@ -95,7 +98,12 @@ define("Context", ["Globals", "openscad-parser-support"], function(Globals, Open
         }
 
         console.log("WARNING: Ignoring unknown module: " + inst.name);
-        return "new " + inst.name+"( "+inst.argvalues.join() +")";
+        if (inst.argvalues instanceof(Array))
+    	{
+        	inst.argvalues = _.compact(inst.argvalues);
+    	}
+        var evaluatedModule = "new " + inst.name+"( "+inst.argvalues +")";
+        return evaluatedModule
     };
 
     Context.newContext = function (parentContext, argnames, argexpr, inst) {

@@ -16,6 +16,10 @@ define("TransformModules", ["Globals", "Context"], function(Globals, Context){
 		        });
 		        var childAdaptor = factory.getAdaptor(childInst);
 		        var transformedChild = childAdaptor.evaluate(context, childInst);
+		        if (transformedChild instanceof(Array))
+            	{
+		        	transformedChild = _.compact(transformedChild);
+            	}
                 if (transformedChild){
                     transformedChild += cb();
                     childModules.push(transformedChild);
@@ -109,7 +113,7 @@ define("TransformModules", ["Globals", "Context"], function(Globals, Context){
 
         if (_.isArray(a)){
             return this.transformChildren(inst.children, context, function(){
-                return _.template('.rotate([<%=degreeX%>,<%=degreeY%>,(<%=degreeZ%>])', {degreeX:a[0],degreeY:a[1],degreeZ:a[2]});
+                return _.template('.rotate([<%=degreeX%>,<%=degreeY%>,<%=degreeZ%>])', {degreeX:a[0],degreeY:a[1],degreeZ:a[2]});
             });
         } else {
             var v = Context.contextVariableLookup(context, "v", undefined);
@@ -169,7 +173,8 @@ define("TransformModules", ["Globals", "Context"], function(Globals, Context){
         //return _.template('.translate([<%=v%>])', {v:v});
         
         return this.transformChildren(inst.children, context, function(){
-            return _.template('.translate([<%=v%>])', {v:v});
+        	result = _.template('.translate([<%=v%>])', {v:v});
+            return result;
         });
 
     };
