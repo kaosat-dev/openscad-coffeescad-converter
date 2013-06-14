@@ -1120,17 +1120,19 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
             }
             catch(err){}
             
+            //just a small trick for more readeable results (whitespace around params block
+            var instanceParams = inst.argvalues;
+            instanceParams = instanceParams.length >0 ? " "+ instanceParams +" " : instanceParams
+            console.log("instanceParams",instanceParams)
             
             if (context.level === 1)
             {
-            	lines.push("assembly.add(new "+ this.name+"( "+inst.argvalues+" ))")
+            	lines.push("assembly.add(new "+ this.name+"("+instanceParams+"))")
             }
             else
             {
-            	
-            	lines.push("new "+this.name+"( "+ inst.argvalues +" )");
+            	lines.push("new "+this.name+"("+ instanceParams +")");
             }
-            
         }
 
         context.inst_p = inst;
@@ -1241,17 +1243,21 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
 	            	console.log ("bleh",evaluatedChild instanceof(Array));
 	            	if (evaluatedChild instanceof(Array))
 	            	{
+	            		/*for (var i=0; i<evaluatedChild.length;i++)
+	            		{
+	            			
+	            		}*/
 	            		evaluatedChild = _.compact(evaluatedChild);
-	            		
 	            	}
 	            	if (child.children.length > 1) //if we have potential multiline content
 	            	{
-	            		evaluatedChild = "    @union( \n"+evaluatedChild+"\n )";
+	            		evaluatedChild = "    @union(\n"+evaluatedChild+"\n    )";
 	            	}
 	            	else{
 	            		evaluatedChild = "    @union( "+evaluatedChild+" )";
 	            	}
-	            	
+	            	//var indentLevel = Array(context.level).join("  ");
+	            	//evaluatedChild = indentLevel+ evaluatedChild;
 	            	evaluatedChild = makeInstanceVars(evaluatedChild);
 	            }
 	            if (evaluatedChild == undefined || (_.isArray(evaluatedChild) && _.isEmpty(evaluatedChild))){
@@ -3801,9 +3807,12 @@ define("CSGModule", ["Globals", "Context"], function(Globals, Context){
             return childModules[0];
         } else {
             //return childModules[0] + "."+this.csgOperation+"([" + childModules.slice(1).join(',\n') + "])";
-        	var indentLevel = Array(context.level).join("  ")
-        	var csgOpResult = this.csgOperation+"(["+_.first(childModules)+',\n'+_.rest(childModules,0).join('\n'+indentLevel)+ "])";
-            return csgOpResult;//childModules.join('\n'+indentLevel)+ "])";
+        	var indentLevel = Array(context.level+4).join("  ");
+        	var childrenIndentLevel = Array((context.level)+5).join("  ");
+        	var joiner = ',\n'+childrenIndentLevel;
+        	
+        	var csgOpResult = indentLevel + this.csgOperation+"([\n"+childrenIndentLevel+childModules.join(joiner)+ childrenIndentLevel+ "\n" + indentLevel +"])";
+            return csgOpResult;
         }
     };
 

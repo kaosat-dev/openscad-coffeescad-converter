@@ -38,17 +38,19 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
             }
             catch(err){}
             
+            //just a small trick for more readeable results (whitespace around params block
+            var instanceParams = inst.argvalues;
+            instanceParams = instanceParams.length >0 ? " "+ instanceParams +" " : instanceParams
+            console.log("instanceParams",instanceParams)
             
             if (context.level === 1)
             {
-            	lines.push("assembly.add(new "+ this.name+"( "+inst.argvalues+" ))")
+            	lines.push("assembly.add(new "+ this.name+"("+instanceParams+"))")
             }
             else
             {
-            	
-            	lines.push("new "+this.name+"( "+ inst.argvalues +" )");
+            	lines.push("new "+this.name+"("+ instanceParams +")");
             }
-            
         }
 
         context.inst_p = inst;
@@ -159,17 +161,21 @@ define("Module", ["Context", "Globals"], function(Context, Globals){
 	            	console.log ("bleh",evaluatedChild instanceof(Array));
 	            	if (evaluatedChild instanceof(Array))
 	            	{
+	            		/*for (var i=0; i<evaluatedChild.length;i++)
+	            		{
+	            			
+	            		}*/
 	            		evaluatedChild = _.compact(evaluatedChild);
-	            		
 	            	}
 	            	if (child.children.length > 1) //if we have potential multiline content
 	            	{
-	            		evaluatedChild = "    @union( \n"+evaluatedChild+"\n )";
+	            		evaluatedChild = "    @union(\n"+evaluatedChild+"\n    )";
 	            	}
 	            	else{
 	            		evaluatedChild = "    @union( "+evaluatedChild+" )";
 	            	}
-	            	
+	            	//var indentLevel = Array(context.level).join("  ");
+	            	//evaluatedChild = indentLevel+ evaluatedChild;
 	            	evaluatedChild = makeInstanceVars(evaluatedChild);
 	            }
 	            if (evaluatedChild == undefined || (_.isArray(evaluatedChild) && _.isEmpty(evaluatedChild))){
